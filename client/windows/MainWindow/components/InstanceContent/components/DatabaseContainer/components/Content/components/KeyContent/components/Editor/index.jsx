@@ -34,7 +34,8 @@ class Editor extends React.PureComponent {
         raw: false,
         json: false,
         messagepack: false,
-        snappy: false
+        snappy: false,
+        snappyJson: false
       }
     }
   }
@@ -74,10 +75,13 @@ class Editor extends React.PureComponent {
     const modes = {}
     modes.raw = content
     modes.snappy = tryDecompressSnappy(buffer)
+    modes.snappyJson = tryFormatJSON(Buffer.from(tryDecompressSnappy(buffer), 'utf8'), true)
     modes.json = tryFormatJSON(content, true)
     modes.messagepack = modes.json ? false : tryFormatMessagepack(buffer, true)
     let currentMode = 'raw'
-    if (modes.snappy) {
+    if (modes.snappyJson) {
+      currentMode = 'snappyJson'
+    } else if (modes.snappy) {
       currentMode = 'snappy'
     } else if (modes.messagepack) {
       currentMode = 'messagepack'
@@ -91,7 +95,7 @@ class Editor extends React.PureComponent {
 
   save() {
     let content = this.state.modes.raw
-    if (this.state.currentMode === 'json') {
+    if (this.state.currentMode === 'json' || this.state.currentMode === 'snappyJson') {
       content = tryFormatJSON(this.state.modes.json)
       if (!content) {
         alert('The json is invalid. Please check again.')
@@ -104,9 +108,12 @@ class Editor extends React.PureComponent {
         return
       }
       content = msgpack.encode(JSON.parse(content))
-    } else if (this.state.currentMode === 'snappy') {
+    }
+    
+    if (this.state.currentMode === 'snappy' || this.state.currentMode === 'snappyJson') {
       content = Buffer.from(snappy.compress(Buffer.from(content, 'utf8')))
     }
+
     this.props.onSave(content, err => {
       if (err) {
         alert(`Redis save failed: ${err.message}`)
@@ -176,8 +183,30 @@ class Editor extends React.PureComponent {
           lineNumbers: true
         }}
         />)
-    } else if (this.state.currentMode === 'json') {
+    } else if (this.state.currentMode === 'snappyJson') {
       viewer = (<Codemirror
+        ref="codemirror"
+        key="snappyJson"
+        value={this.state.modes.snappyJson}
+        onChange={this.updateContent.bind(this, 'snappyJson')}
+        options={{
+          mode: {
+            name: 'javascript',
+            json: true
+          },
+          tabSize: 2,
+          indentWithTabs: true,
+          styleActiveLine: true,
+          lineNumbers: true,
+          lineWrapping: this.state.wrapping,
+          gutters: ['CodeMirror-lint-markers'],
+          autoCloseBrackets: true,
+          matchTags: true,
+          lint: Boolean(this.state.modes.raw)
+        }}
+        />)
+      } else if (this.state.currentMode === 'json') {
+        viewer = (<Codemirror
         ref="codemirror"
         key="json"
         value={this.state.modes.json}
@@ -247,6 +276,7 @@ class Editor extends React.PureComponent {
           >
           <option value="raw" disabled={typeof this.state.modes.raw !== 'string'}>Raw</option>
           <option value="snappy" disabled={typeof this.state.modes.snappy !== 'string'}>Snappy</option>
+          <option value="snappyJson" disabled={typeof this.state.modes.snappyJson !== 'string'}>Snappy+JSON</option>
           <option value="json" disabled={typeof this.state.modes.json !== 'string'}>JSON</option>
           <option value="messagepack" disabled={typeof this.state.modes.messagepack !== 'string'}>MessagePack</option>
         </select>
