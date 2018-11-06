@@ -198,6 +198,23 @@ class HashContent extends BaseContent {
                     })
                   })
                 }}
+                find="true"
+                onFind={() => {
+                  showModal({
+                    button: 'Find Member',
+                    form: {
+                      type: 'object',
+                      properties: {
+                        'Key:': {
+                          type: 'string'
+                        }
+                      }
+                    }
+                  }).then(res => {
+                    const data = res['Key:']
+                    this.handleSelect(null, this.state.members.findIndex(value => value[0].includes(data)))
+                  })
+                }}
                             />
             }
             width={this.props.contentBarWidth}

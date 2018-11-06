@@ -1,7 +1,7 @@
 .AddButton {
   position: relative;
 
-  span.plus, span.reload {
+  span.plus, span.reload, span.find {
     position: absolute;
     right: 4px;
     top: 4px;
@@ -22,6 +22,10 @@
     &:active {
       background: #efefef;
     }
+  }
+
+  span.find {
+    right: 24px;
   }
 
   span.reload {

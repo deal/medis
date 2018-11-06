@@ -7,6 +7,9 @@ export default class AddButton extends React.PureComponent {
     return (<div className="AddButton">
       {this.props.title}
       {
+        this.props.find && <span className="find" onClick={this.props.onFind}>?</span>
+      }
+      {
         this.props.reload && <span className="reload icon icon-cw" onClick={this.props.onReload}/>
       }
       <span className="plus" onClick={this.props.onClick}>+</span>
